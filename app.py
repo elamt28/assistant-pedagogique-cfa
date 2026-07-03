@@ -142,7 +142,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours..."):
             try:
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 consigne_referentiel = ""
                 if competence_ref:
