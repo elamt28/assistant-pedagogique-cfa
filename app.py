@@ -31,16 +31,16 @@ h1 {
 }
 
 /* Champs de saisie (Lisibilité améliorée et Néon Vert au focus) */
-div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
+div[data-baseweb="input"] > div, div[data-baseweb="select"] > div, div[data-baseweb="textarea"] > div {
     background-color: #16213e !important;
     border: 2px solid #0f3460 !important;
     border-radius: 8px;
 }
-div[data-baseweb="input"] > div > input {
+div[data-baseweb="input"] > div > input, div[data-baseweb="textarea"] > div > textarea {
     color: #ffffff !important;
     font-weight: bold;
 }
-div[data-baseweb="input"]:focus-within > div, div[data-baseweb="select"]:focus-within > div {
+div[data-baseweb="input"]:focus-within > div, div[data-baseweb="select"]:focus-within > div, div[data-baseweb="textarea"]:focus-within > div {
     border-color: #00ffcc !important;
     box-shadow: 0 0 15px rgba(0, 255, 204, 0.6) !important;
 }
@@ -61,6 +61,13 @@ div.stButton > button:first-child:hover {
     background-color: #00f0ff !important;
     color: #1a1a2e !important;
     box-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff;
+}
+
+/* Style de l'expander (Menu déroulant Options) */
+div[data-testid="stExpander"] {
+    background-color: #16213e !important;
+    border: 1px solid #0f3460 !important;
+    border-radius: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -123,7 +130,24 @@ with col2:
         autocomplete="off"
     )
 
-# Attention ici : il ne doit rien y avoir avant "competence_ref"
+# --- OPTIONS AVANCÉES (Lieu & Entreprise) ---
+with st.expander("📍 Options du Scénario (Lieu & Entreprise)"):
+    st.write("Personnalisez le contexte pour ancrer le cours dans la réalité des apprentis.")
+    col_opt1, col_opt2 = st.columns(2)
+    with col_opt1:
+        lieu_scenario = st.text_input(
+            "Ville ou Région :",
+            placeholder="Ex: Strasbourg, Bretagne...",
+            help="Laissez vide pour utiliser Chartres par défaut."
+        )
+    with col_opt2:
+        type_entreprise = st.text_input(
+            "Type d'entreprise :",
+            placeholder="Ex: Grande surface, Salon de coiffure...",
+            help="Laissez vide pour laisser l'IA choisir selon le thème."
+        )
+
+# --- COMPÉTENCE RÉFÉRENTIEL ---
 competence_ref = st.text_area(
     "📜 Compétence du référentiel visée (Optionnel)",
     placeholder="Ex: C2.1 - Participer au suivi des stocks\n(Vous pouvez coller plusieurs lignes ou puces ici)",
@@ -142,6 +166,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours..."):
             try:
                 genai.configure(api_key=api_key)
+                # Le moteur validé et fonctionnel : gemini-2.5-flash
                 model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 consigne_referentiel = ""
@@ -150,6 +175,10 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                     5. CONFORMITÉ AU RÉFÉRENTIEL (OBLIGATION) : Tu dois impérativement construire TOUT le cours autour de cette compétence : "{competence_ref}".
                     """
                 
+                # Validation des choix de scénario (remplissage par défaut si vide)
+                lieu_final = lieu_scenario if lieu_scenario else "Chartres (Eure-et-Loir)"
+                entreprise_finale = type_entreprise if type_entreprise else "Au choix, selon le thème"
+
                 prompt_pedagogique = f"""
                 Tu es un expert en ingénierie pédagogique pour l'apprentissage en CFA.
                 Tu dois concevoir un plan de cours approfondi, conforme et minuté.
@@ -159,12 +188,14 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 THÈME DU COURS : "{theme_cours}"
                 DURÉE TOTALE : "{duree_seance}"
                 COMPÉTENCE RÉFÉRENTIEL : "{competence_ref if competence_ref else 'Non spécifiée'}"
+                LIEU DU SCÉNARIO : "{lieu_final}"
+                TYPE D'ENTREPRISE : "{entreprise_finale}"
                 ========================
 
                 CONSIGNES CRITIQUES DE CALIBRAGE :
                 1. ANALYSE SÉMANTIQUE : Déduis le niveau exact et la filière métier.
                 2. ADAPTATION : Vocabulaire concret et opérationnel pour CAP/BP ; analytique/stratégique pour BTS/BM.
-                3. CONTEXTUALISATION : Situe le scénario aux alentours de Chartres (Eure-et-Loir).
+                3. CONTEXTUALISATION : Situe le scénario dans le lieu : {lieu_final}. L'entreprise ciblée est de type : {entreprise_finale}.
                 4. DIRECTIVES DE MANU : Tu es le prescripteur, Manu est l'acteur (ne le nomme jamais). Intègre de l'humour/jeux de mots.
                 {consigne_referentiel}
                 6. GESTION DU TEMPS : Pour chaque section (Apport de connaissances, Exercice, etc.), tu dois indiquer une durée estimée cohérente pour que le total fasse exactement {duree_seance}.
@@ -185,7 +216,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 ## 🎯 Objectif de la séance (Temps estimé : X min)
                 [Objectif calibré et lié au référentiel]
 
-                ## 🔧 Mission Professionnelle à Chartres (Temps estimé : X min)
+                ## 🔧 Mission Professionnelle à {lieu_final} (Temps estimé : X min)
                 [Scénario engageant avec jeu de mots]
                 [Image 1 : Photo]
 
