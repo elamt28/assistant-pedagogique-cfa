@@ -18,7 +18,7 @@ st.markdown("""
 }
 
 /* Forcer le texte en blanc pur pour une lisibilité maximale */
-.stApp p, .stApp span, .stApp div, .stApp label, .stApp h2, .stApp h3 {
+.stApp p, .stApp span, .stApp div, .stApp label, .stApp h2, .stApp h3, .stApp li {
     color: #ffffff !important;
 }
 
@@ -62,16 +62,10 @@ div.stButton > button:first-child:hover {
     color: #1a1a2e !important;
     box-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff;
 }
-
-/* Style de la barre latérale */
-[data-testid="stSidebar"] {
-    background-color: #0f3460 !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
 # --- MÉMOIRE DE L'APPLICATION (SESSION STATE) ---
-# Permet de ne pas perdre le cours généré si on clique ailleurs
 if "cours_genere" not in st.session_state:
     st.session_state.cours_genere = ""
 if "theme_memoire" not in st.session_state:
@@ -89,7 +83,6 @@ except Exception:
 st.title("⚡ ASSISTANT PÉDAGOGIQUE INTELLIGENT")
 st.markdown("---")
 
-# NOUVEAUTÉ : La case API est affichée directement au centre si la clé n'est pas trouvée
 if not api_key:
     st.warning("⚠️ **Le moteur est en veille.** Pour l'activer, collez votre clé API ci-dessous :")
     api_key = st.text_input(
@@ -99,7 +92,6 @@ if not api_key:
     )
     st.markdown("---")
 else:
-    # Message discret si la clé est déjà configurée par l'admin
     st.success("✅ Moteur connecté (Clé sécurisée par l'administrateur).")
 
 if os.path.exists("edited-image.png"):
@@ -119,7 +111,6 @@ with col1:
         autocomplete="off"
     )
     
-    # NOUVEAUTÉ : Gestion du temps
     duree_seance = st.selectbox(
         "⏱️ Durée de la séance ?",
         options=["1 heure", "2 heures", "3 heures", "4 heures", "Journée complète (7h)"]
@@ -132,7 +123,6 @@ with col2:
         autocomplete="off"
     )
 
-# Champ pour la conformité au référentiel
 competence_ref = st.text_input(
     "📜 Compétence du référentiel visée (Optionnel)",
     placeholder="Ex: C2.1 - Participer au suivi des stocks",
@@ -145,14 +135,14 @@ st.markdown("###")
 # --- LOGIQUE DE GÉNÉRATION ---
 if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_container_width=True):
     if not api_key:
-        st.error("⛔ Clé API manquante. Veuillez l'insérer dans la barre latérale ou configurer les secrets.")
+        st.error("⛔ Clé API manquante. Veuillez l'insérer dans la zone prévue à cet effet.")
     elif not public_cible or not theme_cours:
         st.warning("⚠️ Veuillez remplir au minimum les champs 'Public' et 'Thème'.")
     else:
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours..."):
             try:
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 consigne_referentiel = ""
                 if competence_ref:
@@ -183,9 +173,15 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                    - Image 1 (Photo) : ajoute "realistic_photo_of_" dans l'URL.
                    - Image 2 (Cartoon) : ajoute "funny_cartoon_style_of_" dans l'URL.
                    - Remplace les espaces par des tirets du bas (_) dans l'URL.
-                8. PROFONDEUR : Le cours ne doit absolument pas être superficiel. Explique le pourquoi et le comment.
+                8. PROFONDEUR ET RÉFÉRENTIEL : Le cours ne doit absolument pas être superficiel. Tu dois impérativement déduire du diplôme cible les prérequis logiques, ainsi que l'intitulé des compétences et savoirs associés (savoirs technologiques/théoriques) issus du référentiel officiel.
 
                 STRUCTURE DE SORTIE ATTENDUE (EN MARKDOWN) :
+                
+                ## 📋 Fiche Pédagogique de la Séance
+                * **Prérequis :** [Ce que l'apprenti doit impérativement maîtriser avant de commencer cette séance]
+                * **Compétences visées (Référentiel) :** [Liste des compétences mobilisées pour ce thème]
+                * **Savoirs associés (Référentiel) :** [Liste des savoirs technologiques et généraux en lien avec la séance]
+
                 ## 🎯 Objectif de la séance (Temps estimé : X min)
                 [Objectif calibré et lié au référentiel]
 
@@ -215,18 +211,16 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 
                 response = model.generate_content(prompt_pedagogique)
                 
-                # On sauvegarde le résultat et le titre dans la mémoire de l'application
                 st.session_state.cours_genere = response.text
                 st.session_state.theme_memoire = theme_cours
                 
             except Exception as e:
                 st.error(f"🚨 Une erreur technique est survenue : {e}")
 
-# --- AFFICHAGE ET EXPORTATION (Si un cours est en mémoire) ---
+# --- AFFICHAGE ET EXPORTATION ---
 if st.session_state.cours_genere:
     st.success("✨ Scénario généré et sauvegardé en mémoire !")
     
-    # NOUVEAUTÉ : Bouton de téléchargement
     nom_fichier = f"Cours_{st.session_state.theme_memoire.replace(' ', '_')}.md"
     st.download_button(
         label="📥 TÉLÉCHARGER LE COURS (Format Texte/Markdown)",
