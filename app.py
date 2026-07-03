@@ -123,7 +123,7 @@ with col2:
         autocomplete="off"
     )
 
-<comment-tag id="1">competence_ref = st.text_input(
+competence_ref = st.text_input(
     "📜 Compétence du référentiel visée (Optionnel)",
     placeholder="Ex: C2.1 - Participer au suivi des stocks",
     autocomplete="off",
