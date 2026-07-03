@@ -166,7 +166,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours..."):
             try:
                 genai.configure(api_key=api_key)
-                # Le moteur validé et fonctionnel : gemini-2.5-flash
+                # Le moteur validé et fonctionnel
                 model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 consigne_referentiel = ""
@@ -179,6 +179,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 lieu_final = lieu_scenario if lieu_scenario else "Chartres (Eure-et-Loir)"
                 entreprise_finale = type_entreprise if type_entreprise else "Au choix, selon le thème"
 
+                # Création du prompt ultra-détaillé pour l'IA
                 prompt_pedagogique = f"""
                 Tu es un expert en ingénierie pédagogique pour l'apprentissage en CFA.
                 Tu dois concevoir un plan de cours approfondi, conforme et minuté.
@@ -234,7 +235,17 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 [3 points clés]
 
                 ## ❓ QCM d'évaluation - 10 questions (Temps estimé : X min)
-                [10 questions à choix multiples A/B/C/D sans les réponses]
+                [10 questions à choix multiples. ⚠️ FORMAT DE SAUT DE LIGNE OBLIGATOIRE POUR CHAQUE QUESTION :
+                **Question X : [Texte de la question]**
+                
+                A) [Réponse A]
+                
+                B) [Réponse B]
+                
+                C) [Réponse C]
+                
+                D) [Réponse D]
+                ]
 
                 ## 🗝️ Corrigé du QCM (Pour le formateur)
                 [Les 10 réponses avec courte justification]
