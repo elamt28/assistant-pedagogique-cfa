@@ -123,12 +123,12 @@ with col2:
         autocomplete="off"
     )
 
-competence_ref = st.text_input(
+# Attention ici : il ne doit rien y avoir avant "competence_ref"
+competence_ref = st.text_area(
     "📜 Compétence du référentiel visée (Optionnel)",
-    placeholder="Ex: C2.1 - Participer au suivi des stocks",
-    autocomplete="off",
-    help="Copiez-collez ici la ligne exacte du référentiel pour forcer la conformité."
-)</comment-tag id="1" text="Je suggère de remplacer 'st.text_input' par 'st.text_area' ici. Étant donné que les formateurs manipulent des référentiels souvent longs (avec des puces ou des sous-compétences), une grande zone de texte multiligne leur évitera la frustration d'une ligne de saisie trop étroite." type="suggestion">
+    placeholder="Ex: C2.1 - Participer au suivi des stocks\n(Vous pouvez coller plusieurs lignes ou puces ici)",
+    help="Copiez-collez ici les lignes exactes du référentiel pour forcer la conformité."
+)
 
 st.markdown("###")
 
@@ -211,8 +211,8 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 
                 response = model.generate_content(prompt_pedagogique)
                 
-<comment-tag id="2">                st.session_state.cours_genere = response.text
-                st.session_state.theme_memoire = theme_cours</comment-tag id="2" text="Ajouter 'st.balloons()' juste en dessous de ces deux lignes. Cette commande toute simple déclenchera une pluie de ballons sur l'écran du formateur ! C'est un détail très gratifiant qui indique clairement que l'IA a terminé son travail avec succès." type="suggestion">
+                st.session_state.cours_genere = response.text
+                st.session_state.theme_memoire = theme_cours
                 
             except Exception as e:
                 st.error(f"🚨 Une erreur technique est survenue : {e}")
@@ -221,7 +221,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
 if st.session_state.cours_genere:
     st.success("✨ Scénario généré et sauvegardé en mémoire !")
     
-<comment-tag id="3">    nom_fichier = f"Cours_{st.session_state.theme_memoire.replace(' ', '_')}.md"</comment-tag id="3" text="Pour éviter que les cours ne s'écrasent lors du téléchargement, je conseille de rendre ce nom unique. Tu peux par exemple ajouter un horodatage : 'f\"Cours_{st.session_state.theme_memoire.replace(' ', '_')}_{str(id(st.session_state.cours_genere))[-4:]}.md\"'. Cela garantira que chaque fichier a une fin de nom différente !" type="suggestion">
+    nom_fichier = f"Cours_{st.session_state.theme_memoire.replace(' ', '_')}.md"
     st.download_button(
         label="📥 TÉLÉCHARGER LE COURS (Format Texte/Markdown)",
         data=st.session_state.cours_genere,
