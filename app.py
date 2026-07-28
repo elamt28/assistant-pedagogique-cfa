@@ -86,20 +86,49 @@ try:
 except Exception:
     pass
 
+# --- SIDEBAR ---
+with st.sidebar:
+    st.header("⚙️ Paramètres")
+    if not api_key:
+        st.warning("⚠️ **Le moteur est en veille.**")
+        api_key = st.text_input(
+            "🔑 Votre clé API Google Gemini :",
+            type="password",
+            help="Cette clé est nécessaire pour que l'application puisse dialoguer avec les serveurs d'IA."
+        )
+    else:
+        st.success("✅ Moteur connecté.")
+
+    st.markdown("---")
+    st.subheader("📍 Contexte (Optionnel)")
+    lieu_scenario = st.text_input(
+        "Ville ou Région :",
+        placeholder="Ex: Strasbourg, Bretagne...",
+        help="Laissez vide pour utiliser Chartres par défaut."
+    )
+    type_entreprise = st.text_input(
+        "Type d'entreprise :",
+        placeholder="Ex: Grande surface, Salon de coiffure...",
+        help="Laissez vide pour laisser l'IA choisir selon le thème."
+    )
+
+    st.markdown("---")
+    st.subheader("📜 Référentiel")
+    competence_ref = st.text_area(
+        "Compétence visée (Optionnel)",
+        placeholder="Ex: C2.1 - Participer au suivi des stocks\n(Vous pouvez coller plusieurs lignes ou puces ici)",
+        help="Copiez-collez ici les lignes exactes du référentiel pour forcer la conformité."
+    )
+
+    st.markdown("---")
+    if st.button("🔄 Réinitialiser", use_container_width=True):
+        st.session_state.cours_genere = ""
+        st.session_state.theme_memoire = ""
+        st.rerun()
+
 # --- INTERFACE PRINCIPALE ---
 st.title("⚡ ASSISTANT PÉDAGOGIQUE INTELLIGENT")
 st.markdown("---")
-
-if not api_key:
-    st.warning("⚠️ **Le moteur est en veille.** Pour l'activer, collez votre clé API ci-dessous :")
-    api_key = st.text_input(
-        "🔑 Votre clé API Google Gemini :",
-        type="password",
-        help="Cette clé est nécessaire pour que l'application puisse dialoguer avec les serveurs d'IA."
-    )
-    st.markdown("---")
-else:
-    st.success("✅ Moteur connecté (Clé sécurisée par l'administrateur).")
 
 if os.path.exists("edited-image.png"):
     st.image("edited-image.png", use_container_width=True)
@@ -117,7 +146,7 @@ with col1:
         placeholder="Ex: CAP Équipier Polyvalent du Commerce",
         autocomplete="off"
     )
-    
+
     duree_seance = st.selectbox(
         "⏱️ Durée de la séance ?",
         options=["1 heure", "2 heures", "3 heures", "4 heures", "Journée complète (7h)"]
@@ -129,32 +158,6 @@ with col2:
         placeholder="Ex: La gestion des stocks",
         autocomplete="off"
     )
-
-# --- OPTIONS AVANCÉES (Lieu & Entreprise) ---
-with st.expander("📍 Options du Scénario (Lieu & Entreprise)"):
-    st.write("Personnalisez le contexte pour ancrer le cours dans la réalité des apprentis.")
-    col_opt1, col_opt2 = st.columns(2)
-    with col_opt1:
-        lieu_scenario = st.text_input(
-            "Ville ou Région :",
-            placeholder="Ex: Strasbourg, Bretagne...",
-            help="Laissez vide pour utiliser Chartres par défaut."
-        )
-    with col_opt2:
-        type_entreprise = st.text_input(
-            "Type d'entreprise :",
-            placeholder="Ex: Grande surface, Salon de coiffure...",
-            help="Laissez vide pour laisser l'IA choisir selon le thème."
-        )
-
-# --- COMPÉTENCE RÉFÉRENTIEL ---
-competence_ref = st.text_area(
-    "📜 Compétence du référentiel visée (Optionnel)",
-    placeholder="Ex: C2.1 - Participer au suivi des stocks\n(Vous pouvez coller plusieurs lignes ou puces ici)",
-    help="Copiez-collez ici les lignes exactes du référentiel pour forcer la conformité."
-)
-
-st.markdown("###")
 
 # --- LOGIQUE DE GÉNÉRATION ---
 if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_container_width=True):
@@ -168,13 +171,13 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 genai.configure(api_key=api_key)
                 # Le moteur validé et fonctionnel
                 model = genai.GenerativeModel('gemini-2.5-flash')
-                
+
                 consigne_referentiel = ""
                 if competence_ref:
                     consigne_referentiel = f"""
                     5. CONFORMITÉ AU RÉFÉRENTIEL (OBLIGATION) : Tu dois impérativement construire TOUT le cours autour de cette compétence : "{competence_ref}".
                     """
-                
+
                 # Validation des choix de scénario (remplissage par défaut si vide)
                 lieu_final = lieu_scenario if lieu_scenario else "Chartres (Eure-et-Loir)"
                 entreprise_finale = type_entreprise if type_entreprise else "Au choix, selon le thème"
@@ -208,7 +211,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 8. PROFONDEUR ET RÉFÉRENTIEL : Le cours ne doit absolument pas être superficiel. Tu dois impérativement déduire du diplôme cible les prérequis logiques, ainsi que l'intitulé des compétences et savoirs associés (savoirs technologiques/théoriques) issus du référentiel officiel.
 
                 STRUCTURE DE SORTIE ATTENDUE (EN MARKDOWN) :
-                
+
                 ## 📋 Fiche Pédagogique de la Séance
                 * **Prérequis :** [Ce que l'apprenti doit impérativement maîtriser avant de commencer cette séance]
                 * **Compétences visées (Référentiel) :** [Liste des compétences mobilisées pour ce thème]
@@ -237,32 +240,32 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 ## ❓ QCM d'évaluation - 10 questions (Temps estimé : X min)
                 [10 questions à choix multiples. ⚠️ FORMAT DE SAUT DE LIGNE OBLIGATOIRE POUR CHAQUE QUESTION :
                 **Question X : [Texte de la question]**
-                
+
                 A) [Réponse A]
-                
+
                 B) [Réponse B]
-                
+
                 C) [Réponse C]
-                
+
                 D) [Réponse D]
                 ]
 
                 ## 🗝️ Corrigé du QCM (Pour le formateur)
                 [Les 10 réponses avec courte justification]
                 """
-                
+
                 response = model.generate_content(prompt_pedagogique)
-                
+
                 st.session_state.cours_genere = response.text
                 st.session_state.theme_memoire = theme_cours
-                
+
             except Exception as e:
                 st.error(f"🚨 Une erreur technique est survenue : {e}")
 
 # --- AFFICHAGE ET EXPORTATION ---
 if st.session_state.cours_genere:
     st.success("✨ Scénario généré et sauvegardé en mémoire !")
-    
+
     nom_fichier = f"Cours_{st.session_state.theme_memoire.replace(' ', '_')}.md"
     st.download_button(
         label="📥 TÉLÉCHARGER LE COURS (Format Texte/Markdown)",
@@ -271,6 +274,6 @@ if st.session_state.cours_genere:
         mime="text/markdown",
         help="Téléchargez le cours pour l'ouvrir dans Word, Notepad ou l'imprimer."
     )
-    
+
     st.markdown("---")
     st.markdown(st.session_state.cours_genere)
