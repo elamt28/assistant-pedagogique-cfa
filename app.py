@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 import os
 
 # --- CONFIGURATION DE LA PAGE ---
@@ -165,9 +165,8 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
     else:
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours..."):
             try:
-                genai.configure(api_key=api_key)
-                # Le moteur validé et fonctionnel
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                client = genai.Client(api_key=api_key)
+
                 
                 consigne_referentiel = ""
                 if competence_ref:
@@ -251,7 +250,11 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 [Les 10 réponses avec courte justification]
                 """
                 
-                response = model.generate_content(prompt_pedagogique)
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt_pedagogique,
+                )
+
                 
                 st.session_state.cours_genere = response.text
                 st.session_state.theme_memoire = theme_cours
