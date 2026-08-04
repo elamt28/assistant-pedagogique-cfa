@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 import os
 
 # --- CONFIGURATION DE LA PAGE ---
@@ -74,9 +74,9 @@ div[data-testid="stExpander"] {
 
 # --- MÉMOIRE DE L'APPLICATION (SESSION STATE) ---
 if "cours_genere" not in st.session_state:
-    st.session_state.cours_genere = ""
+    st.session_state['cours_genere'] = ""
 if "theme_memoire" not in st.session_state:
-    st.session_state.theme_memoire = ""
+    st.session_state['theme_memoire'] = ""
 
 # --- RÉCUPÉRATION DE LA CLÉ API ---
 api_key = ""
@@ -117,7 +117,7 @@ with col1:
         placeholder="Ex: CAP Équipier Polyvalent du Commerce",
         autocomplete="off"
     )
-    
+
     duree_seance = st.selectbox(
         "⏱️ Durée de la séance ?",
         options=["1 heure", "2 heures", "3 heures", "4 heures", "Journée complète (7h)"]
@@ -165,16 +165,14 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
     else:
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours..."):
             try:
-                genai.configure(api_key=api_key)
-                # Le moteur validé et fonctionnel
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                
+                client = genai.Client(api_key=api_key)
+
                 consigne_referentiel = ""
                 if competence_ref:
                     consigne_referentiel = f"""
                     5. CONFORMITÉ AU RÉFÉRENTIEL (OBLIGATION) : Tu dois impérativement construire TOUT le cours autour de cette compétence : "{competence_ref}".
                     """
-                
+
                 # Validation des choix de scénario (remplissage par défaut si vide)
                 lieu_final = lieu_scenario if lieu_scenario else "Chartres (Eure-et-Loir)"
                 entreprise_finale = type_entreprise if type_entreprise else "Au choix, selon le thème"
@@ -208,7 +206,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 8. PROFONDEUR ET RÉFÉRENTIEL : Le cours ne doit absolument pas être superficiel. Tu dois impérativement déduire du diplôme cible les prérequis logiques, ainsi que l'intitulé des compétences et savoirs associés (savoirs technologiques/théoriques) issus du référentiel officiel.
 
                 STRUCTURE DE SORTIE ATTENDUE (EN MARKDOWN) :
-                
+
                 ## 📋 Fiche Pédagogique de la Séance
                 * **Prérequis :** [Ce que l'apprenti doit impérativement maîtriser avant de commencer cette séance]
                 * **Compétences visées (Référentiel) :** [Liste des compétences mobilisées pour ce thème]
@@ -237,40 +235,40 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 ## ❓ QCM d'évaluation - 10 questions (Temps estimé : X min)
                 [10 questions à choix multiples. ⚠️ FORMAT DE SAUT DE LIGNE OBLIGATOIRE POUR CHAQUE QUESTION :
                 **Question X : [Texte de la question]**
-                
+
                 A) [Réponse A]
-                
+
                 B) [Réponse B]
-                
+
                 C) [Réponse C]
-                
+
                 D) [Réponse D]
                 ]
 
                 ## 🗝️ Corrigé du QCM (Pour le formateur)
                 [Les 10 réponses avec courte justification]
                 """
-                
-                response = model.generate_content(prompt_pedagogique)
-                
-                st.session_state.cours_genere = response.text
-                st.session_state.theme_memoire = theme_cours
-                
+
+                response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt_pedagogique)
+
+                st.session_state['cours_genere'] = response.text
+                st.session_state['theme_memoire'] = theme_cours
+
             except Exception as e:
                 st.error(f"🚨 Une erreur technique est survenue : {e}")
 
 # --- AFFICHAGE ET EXPORTATION ---
-if st.session_state.cours_genere:
+if st.session_state['cours_genere']:
     st.success("✨ Scénario généré et sauvegardé en mémoire !")
-    
-    nom_fichier = f"Cours_{st.session_state.theme_memoire.replace(' ', '_')}.md"
+
+    nom_fichier = f"Cours_{st.session_state['theme_memoire'].replace(' ', '_')}.md"
     st.download_button(
         label="📥 TÉLÉCHARGER LE COURS (Format Texte/Markdown)",
-        data=st.session_state.cours_genere,
+        data=st.session_state['cours_genere'],
         file_name=nom_fichier,
         mime="text/markdown",
         help="Téléchargez le cours pour l'ouvrir dans Word, Notepad ou l'imprimer."
     )
-    
+
     st.markdown("---")
-    st.markdown(st.session_state.cours_genere)
+    st.markdown(st.session_state['cours_genere'])
