@@ -75,14 +75,14 @@ div[data-testid="stExpander"] {
 
 # --- MÉMOIRE DE L'APPLICATION (SESSION STATE) ---
 if "cours_genere" not in st.session_state:
-    st.session_state.cours_genere = ""
+    st.session_state['cours_genere'] = ""
 if "theme_memoire" not in st.session_state:
-    st.session_state.theme_memoire = ""
+    st.session_state['theme_memoire'] = ""
 
 # Fonction pour réinitialiser le cours
 def reinitialiser_cours():
-    st.session_state.cours_genere = ""
-    st.session_state.theme_memoire = ""
+    st.session_state['cours_genere'] = ""
+    st.session_state['theme_memoire'] = ""
 
 # --- RÉCUPÉRATION DE LA CLÉ API ---
 api_key = ""
@@ -195,7 +195,7 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
     elif not public_cible or not theme_cours:
         st.warning("⚠️ Veuillez remplir au minimum les champs 'Public' et 'Thème'.")
     else:
-        st.session_state.cours_genere = ""
+        st.session_state['cours_genere'] = ""
         
         with st.spinner(f"🔄 Calibrage d'une séance de {duree_seance} en cours... (Connexion au moteur Gemini)"):
             try:
@@ -297,22 +297,22 @@ if st.button("🛠️ GÉNÉRER LE COURS SUR MESURE", type="primary", use_contai
                 
                 zone_affichage_cours.markdown(texte_complet)
                 
-                st.session_state.cours_genere = texte_complet
-                st.session_state.theme_memoire = theme_cours
+                st.session_state['cours_genere'] = texte_complet
+                st.session_state['theme_memoire'] = theme_cours
                 
             except Exception as e:
                 st.error(f"🚨 Une erreur technique est survenue : {e}")
 
 # --- AFFICHAGE EN MÉMOIRE ET EXPORTATION ---
-if st.session_state.cours_genere:
+if st.session_state['cours_genere']:
     st.success("✨ Scénario terminé et prêt à être utilisé !")
     
     col_boutons1, col_boutons2 = st.columns(2)
     with col_boutons1:
-        nom_fichier = f"Cours_{st.session_state.theme_memoire.replace(' ', '_')}.md"
+        nom_fichier = f"Cours_{st.session_state['theme_memoire'].replace(' ', '_')}.md"
         st.download_button(
             label="📥 TÉLÉCHARGER (Format Texte/Markdown)",
-            data=st.session_state.cours_genere,
+            data=st.session_state['cours_genere'],
             file_name=nom_fichier,
             mime="text/markdown",
             use_container_width=True
@@ -323,4 +323,4 @@ if st.session_state.cours_genere:
     st.markdown("---")
     
     if "zone_affichage_cours" not in locals():
-        st.markdown(st.session_state.cours_genere)
+        st.markdown(st.session_state['cours_genere'])
