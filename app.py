@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 import time
 import os
 
@@ -114,9 +114,8 @@ if st.button("🚀 Générer le cours sur mesure"):
         # Le spinner fait patienter l'utilisateur pendant que le moteur se connecte
         with st.spinner(f"🔄 Préparation d'une séance de {duree_seance} en cours..."):
             try:
-                genai.configure(api_key=api_key)
+                client = genai.Client(api_key=api_key)
                 # Utilisation du moteur 2.5-flash validé
-                model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 contexte_pays = pays_autre if systeme_educatif == "Autre pays francophone..." else systeme_educatif
                 
@@ -160,15 +159,16 @@ if st.button("🚀 Générer le cours sur mesure"):
                 [Les 10 réponses avec courte justification]
                 """
                 
-                response = model.generate_content(prompt_pedagogique, stream=True)
+                response = client.models.generate_content_stream(model='gemini-2.5-flash', contents=prompt_pedagogique)
                 
                 for morceau in response:
                     try:
-                        texte_complet += morceau.text
-                        # Affichage du texte dans une boîte blanche stylisée par-dessus le fond bleu
-                        zone_affichage_cours.markdown(f"<div class='success-box'>{texte_complet}</div>", unsafe_allow_html=True)
-                        time.sleep(0.015) 
-                    except ValueError:
+                        if morceau.text:
+                            texte_complet += morceau.text
+                            # Affichage du texte dans une boîte blanche stylisée par-dessus le fond bleu
+                            zone_affichage_cours.markdown(f"<div class='success-box'>{texte_complet}</div>", unsafe_allow_html=True)
+                            time.sleep(0.015)
+                    except (ValueError, AttributeError):
                         continue
                         
             except Exception as e:
