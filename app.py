@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 import time
 import os
 
@@ -75,17 +75,17 @@ col1, col2 = st.columns(2)
 
 with col1:
     systeme_educatif = st.selectbox("🌍 Système Éducatif", [
-        "France (Éducation Nationale / Qualiopi)", 
-        "Québec (DEP)", 
-        "Suisse (CFC)", 
-        "Belgique (IFAPME / Qualifiant)", 
+        "France (Éducation Nationale / Qualiopi)",
+        "Québec (DEP)",
+        "Suisse (CFC)",
+        "Belgique (IFAPME / Qualifiant)",
         "Autre pays francophone..."
     ])
-    
+
     pays_autre = ""
     if systeme_educatif == "Autre pays francophone...":
         pays_autre = st.text_input("Veuillez préciser le pays :")
-        
+
     public_cible = st.text_input("👥 Public (ex: BTS MCO, CAP Cuisine) :")
     duree_seance = st.selectbox("⏱️ Durée", ["1 heure", "2 heures", "Demi-journée", "Journée entière"])
 
@@ -94,8 +94,8 @@ with col2:
     type_commerce = st.text_input("🏪 Type de commerce (ex: Boutique de sport, Restaurant, Bricolage) :")
     ton_cours = st.selectbox("🎭 Ton de l'animation", [
         "Dynamique et ludique",
-        "Neutre et académique", 
-        "Bienveillant et encourageant", 
+        "Neutre et académique",
+        "Bienveillant et encourageant",
         "Strict et directif"
     ])
     lieu_cours = st.text_input("📍 Lieu / Ville (Optionnel, ex: Paris, Montréal) :")
@@ -108,23 +108,21 @@ if st.button("🚀 Générer le cours sur mesure"):
         st.warning("⚠️ Veuillez remplir au minimum les champs 'Public', 'Thème' et 'Type de commerce'.")
     else:
         # ZONE DE TEXTE PROTEGÉE : Créée avant le spinner pour ne pas disparaître !
-        zone_affichage_cours = st.empty() 
+        zone_affichage_cours = st.empty()
         texte_complet = ""
-        
+
         # Le spinner fait patienter l'utilisateur pendant que le moteur se connecte
         with st.spinner(f"🔄 Préparation d'une séance de {duree_seance} en cours..."):
             try:
-                genai.configure(api_key=api_key)
-                # Utilisation du moteur 2.5-flash validé
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                
+                client = genai.Client(api_key=api_key)
+
                 contexte_pays = pays_autre if systeme_educatif == "Autre pays francophone..." else systeme_educatif
-                
+
                 # Le Prompt intègre désormais le type de commerce demandé
                 prompt_pedagogique = f"""
                 Agis comme un ingénieur pédagogique expert pour la formation professionnelle.
                 Rédige une fiche pédagogique complète pour la séance suivante :
-                
+
                 - Système éducatif ciblé : {contexte_pays}
                 - Public visé : {public_cible}
                 - Thème de la séance : {theme_cours}
@@ -132,24 +130,24 @@ if st.button("🚀 Générer le cours sur mesure"):
                 - Durée : {duree_seance}
                 - Ton de l'animation : {ton_cours}
                 - Contexte / Mise en situation : {lieu_cours if lieu_cours else "À définir localement"}
-                
+
                 IMPORTANT : Tout le scénario, les exemples et la mise en situation doivent impérativement se dérouler dans un contexte de "{type_commerce}".
                 Utilise le vocabulaire officiel adapté au système éducatif ciblé.
-                
+
                 Structure obligatoire de la réponse (en Markdown) :
                 ## 📋 Fiche Pédagogique de la Séance
                 [Prérequis, Compétences visées, Savoirs associés]
-                
+
                 ## 🎯 Objectif de la séance
                 [Objectif clair et minuté]
-                
+
                 ## 🔧 Déroulé et Mise en situation professionnelle ({type_commerce})
                 [Explication de l'activité]
-                
+
                 ## ❓ QCM d'évaluation - 10 questions
                 [10 questions à choix multiples. FORMAT OBLIGATOIRE POUR CHAQUE QUESTION :
                 **Question X : [Texte]**
-                
+
                 A) [Réponse A]
                 B) [Réponse B]
                 C) [Réponse C]
@@ -159,20 +157,32 @@ if st.button("🚀 Générer le cours sur mesure"):
                 ## 🗝️ Corrigé du QCM
                 [Les 10 réponses avec courte justification]
                 """
-                
-                response = model.generate_content(prompt_pedagogique, stream=True)
-                
+
+                response = client.models.generate_content_stream(model='gemini-2.5-flash', contents=prompt_pedagogique)
+
                 for morceau in response:
                     try:
                         texte_complet += morceau.text
                         # Affichage du texte dans une boîte blanche stylisée par-dessus le fond bleu
                         zone_affichage_cours.markdown(f"<div class='success-box'>{texte_complet}</div>", unsafe_allow_html=True)
-                        time.sleep(0.015) 
+                        time.sleep(0.015)
                     except ValueError:
                         continue
-                        
+
+                # Sauvegarder le cours généré dans l'état de la session pour l'exportation
+                st.session_state['cours_genere'] = texte_complet
+
             except Exception as e:
                 st.error(f"❌ Une erreur de connexion au moteur de Google est survenue : {e}")
+
+# Afficher le bouton d'exportation si un cours a été généré
+if 'cours_genere' in st.session_state and st.session_state['cours_genere']:
+    st.download_button(
+        label="📥 Télécharger le cours (Markdown)",
+        data=st.session_state['cours_genere'],
+        file_name="cours_pedagogique.md",
+        mime="text/markdown"
+    )
 
 st.markdown("---")
 st.markdown("<p style='text-align: center; color: #555; font-size: 0.85em;'>Développé pour les acteurs de la formation professionnelle.</p>", unsafe_allow_html=True)
